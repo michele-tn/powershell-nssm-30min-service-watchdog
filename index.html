@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Production guide for deploying a Windows executable as a resilient NSSM service.">
+<meta name="color-scheme" content="dark light"><title>Windows Service Deployment Guide</title>
+<style>
+:root{--bg:#07111f;--card:#0e1c2d;--card2:#14273c;--text:#eaf2f9;--muted:#9cafc2;--line:#29445e;--cyan:#43e2d2;--blue:#6baeff;--amber:#ffc857;--red:#ff7185;--shadow:0 22px 65px #0005;--r:20px}[data-theme=light]{--bg:#f5f8fc;--card:#fff;--card2:#edf3f9;--text:#122033;--muted:#52677b;--line:#cad9e6;--cyan:#007f79;--blue:#176dc2;--amber:#9b6200;--red:#bd2942;--shadow:0 18px 48px #2643601c}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:85px}body{margin:0;background:radial-gradient(circle at 82% 0,#43e2d21a,transparent 28%),var(--bg);color:var(--text);font:16px/1.65 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}button,input{font:inherit}a{color:var(--cyan)}:focus-visible{outline:3px solid var(--amber);outline-offset:3px}.skip{position:fixed;top:-70px;left:15px;z-index:99;background:var(--amber);color:#111;padding:9px 14px;border-radius:8px}.skip:focus{top:12px}.progress{position:fixed;inset:0 auto auto 0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--blue));z-index:100}.bar{position:sticky;top:0;z-index:20;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 84%,transparent);backdrop-filter:blur(16px)}.barin{max-width:1180px;margin:auto;padding:11px 22px;display:flex;gap:12px;align-items:center}.brand{font-weight:900;letter-spacing:.06em;margin-right:auto}.brand b{color:var(--cyan)}.search,.pill{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:99px;padding:9px 14px}.search{width:min(300px,38vw)}.pill{cursor:pointer}.pill:hover{border-color:var(--cyan)}.hero{max-width:1180px;margin:auto;padding:84px 22px 55px;display:grid;grid-template-columns:1.2fr .8fr;gap:50px;align-items:center}.kicker,.label{color:var(--cyan);font:bold .76rem ui-monospace,monospace;letter-spacing:.15em;text-transform:uppercase}.hero h1{font-size:clamp(3rem,7vw,6.3rem);line-height:.92;letter-spacing:-.065em;margin:.22em 0}.hero h1 span{display:block;color:transparent;-webkit-text-stroke:1px var(--cyan)}.lead{color:var(--muted);font-size:1.13rem;max-width:700px}.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}.tag{border:1px solid var(--line);border-radius:99px;padding:6px 11px;font-size:.8rem;background:var(--card)}.terminal{background:#030911;border:1px solid #253b51;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;transform:rotate(1deg)}.termhead{padding:13px;background:#0d1723}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff6b6b;margin-right:5px}.dot:nth-child(2){background:#ffd166}.dot:nth-child(3){background:#40d59b}.terminal pre{border:0;margin:0}.ok{color:#43e2d2}.layout{max-width:1180px;margin:auto;padding:15px 22px 90px;display:grid;grid-template-columns:225px minmax(0,1fr);gap:40px}.toc{position:sticky;top:80px;align-self:start}.toc a{display:block;color:var(--muted);text-decoration:none;border-left:1px solid var(--line);padding:8px 14px;font-size:.9rem}.toc a:hover,.toc a.active{color:var(--cyan);border-left:3px solid var(--cyan);background:linear-gradient(90deg,#43e2d217,transparent)}main{min-width:0}section{margin-bottom:70px}h2{font-size:clamp(2rem,4vw,3rem);line-height:1.08;letter-spacing:-.04em;margin:.25em 0 .65em}h3{margin-top:0}.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.card{background:linear-gradient(145deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:var(--r);padding:23px;box-shadow:var(--shadow)}.num{font:bold 2.25rem/1 ui-monospace;color:var(--cyan)}.callout{margin:20px 0;padding:17px 20px;border-left:4px solid var(--amber);border-radius:0 12px 12px 0;background:color-mix(in srgb,var(--amber) 9%,var(--card))}.danger{border-color:var(--red);background:color-mix(in srgb,var(--red) 8%,var(--card))}.flow{display:flex;gap:8px;overflow:auto;align-items:center;padding:8px 0 14px}.step{min-width:135px;flex:1;text-align:center;padding:17px 10px;border:1px solid var(--line);border-radius:14px;background:var(--card)}.arrow{color:var(--cyan);font-size:1.4rem}.table{overflow:auto;border:1px solid var(--line);border-radius:15px}table{width:100%;border-collapse:collapse;min-width:650px}th,td{text-align:left;padding:13px 15px;border-bottom:1px solid var(--line)}th{background:var(--card2);color:var(--cyan);font-size:.76rem;text-transform:uppercase;letter-spacing:.08em}tr:last-child td{border:0}.code{position:relative;margin:16px 0}.copy{position:absolute;right:9px;top:9px}pre{overflow:auto;background:#030911;color:#d9e7f2;border:1px solid #24394e;border-radius:14px;padding:21px;font:13px/1.7 ui-monospace,Consolas,monospace}details{border:1px solid var(--line);border-radius:13px;background:var(--card);margin:9px 0}summary{cursor:pointer;padding:16px 19px;font-weight:750}details p{padding:0 19px 17px;margin:0;color:var(--muted)}footer{text-align:center;color:var(--muted);border-top:1px solid var(--line);padding:30px 20px}[hidden]{display:none!important}.reveal{opacity:0;transform:translateY(14px);transition:.5s}.reveal.visible{opacity:1;transform:none}@media(max-width:820px){.hero{grid-template-columns:1fr}.terminal{transform:none}.layout{grid-template-columns:1fr}.toc{display:none}.grid{grid-template-columns:1fr}}@media(max-width:520px){.brand{font-size:.8rem}.hero,.layout{padding-left:15px;padding-right:15px}.hero h1{font-size:3.2rem}.arrow{display:none}.flow{display:grid;grid-template-columns:1fr 1fr}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a><div class="progress" id="progress"></div>
+<header class="bar"><div class="barin"><div class="brand">SERVICE<b>//OPS</b></div><input id="search" class="search" type="search" aria-label="Search this guide" placeholder="Search guide…"><button id="theme" class="pill" type="button">Light mode</button></div></header>
+<div class="hero"><div><div class="kicker">Production deployment handbook</div><h1>Windows service <span>done right.</span></h1><p class="lead">Deploy a standalone executable as a resilient Windows service with PowerShell and NSSM—complete with validation, logging, recovery, security, and release gates.</p><div class="tags"><span class="tag">PowerShell 5.1+</span><span class="tag">Windows Server</span><span class="tag">NSSM</span><span class="tag">Self-contained HTML</span></div></div><div class="terminal" aria-label="Deployment summary"><div class="termhead"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div><pre><span class="ok">PS C:\&gt;</span> .\deploy-service.ps1
+[check] Administrator privileges
+[check] NSSM and source package
+[sync]  Application payload
+[set]   Service and recovery policy
+[start] ApplicationService
+
+Status: <span class="ok">RUNNING</span></pre></div></div>
+<div class="layout"><nav class="toc" aria-label="On this page"><a href="#overview">Overview</a><a href="#flow">Execution flow</a><a href="#config">Configuration</a><a href="#deploy">Deployment</a><a href="#operate">Operations</a><a href="#secure">Security</a><a href="#script">Corrected script</a><a href="#help">Troubleshooting</a></nav>
+<main id="content">
+<section id="overview" class="reveal searchable"><div class="label">01 / Overview</div><h2>What the automation does</h2><p class="muted">The corrected PowerShell automation validates prerequisites, replaces an existing NSSM service, deploys the executable locally, enables unattended recovery, and registers a SYSTEM scheduled task that restarts the service every 30 minutes.</p><div class="grid"><article class="card"><div class="num">01</div><h3>Fail fast</h3><p>Stops on errors and checks administrator rights, NSSM, Windows PowerShell, and the source executable before deployment.</p></article><article class="card"><div class="num">02</div><h3>Replace safely</h3><p>Stops and removes an existing service, then waits with a bounded timeout for Windows to confirm deletion.</p></article><article class="card"><div class="num">03</div><h3>Install locally</h3><p>Copies the release artifact into a dedicated ProgramData runtime directory.</p></article><article class="card"><div class="num">04</div><h3>Restart predictably</h3><p>NSSM restarts unexpected exits; Task Scheduler forces a controlled restart every 30 minutes.</p></article></div><div class="callout danger"><strong>Destructive behavior:</strong> a service with the configured name is stopped and removed. Verify the exact target and use an approved maintenance window.</div></section>
+<section id="flow" class="reveal searchable"><div class="label">02 / Execution flow</div><h2>From package to scheduled operation</h2><div class="flow" aria-label="Deployment sequence"><div class="step">Privilege<br><strong>check</strong></div><div class="arrow">→</div><div class="step">Dependency<br><strong>validation</strong></div><div class="arrow">→</div><div class="step">Service<br><strong>replacement</strong></div><div class="arrow">→</div><div class="step">Payload<br><strong>copy</strong></div><div class="arrow">→</div><div class="step">NSSM + task<br><strong>configuration</strong></div><div class="arrow">→</div><div class="step">Start +<br><strong>verify</strong></div></div><p class="muted">NSSM owns crash recovery and output redirection. Windows Task Scheduler independently invokes <code>Restart-Service</code> every 30 minutes, even while the application remains healthy.</p></section>
+<section id="config" class="reveal searchable"><div class="label">03 / Configuration</div><h2>Anonymized deployment contract</h2><div class="table"><table><thead><tr><th>Setting</th><th>Safe example</th><th>Purpose</th></tr></thead><tbody><tr><td><code>$NSSM</code></td><td><code>C:\Tools\nssm\win64\nssm.exe</code></td><td>Approved NSSM binary</td></tr><tr><td><code>$ServiceName</code></td><td><code>ApplicationService</code></td><td>Unique service identifier</td></tr><tr><td><code>$SourceExecutable</code></td><td><code>\\fileserver.example\deploy\Application\Application.exe</code></td><td>Controlled release source</td></tr><tr><td><code>$InstallDirectory</code></td><td><code>C:\ProgramData\ExampleOrg\Application</code></td><td>Local runtime and logs</td></tr><tr><td><code>ObjectName</code></td><td><code>LocalSystem</code></td><td>Service identity; review for production</td></tr><tr><td><code>AppRestartDelay</code></td><td><code>5000</code></td><td>Delay after an unexpected exit</td></tr><tr><td><code>$RestartIntervalMinutes</code></td><td><code>30</code></td><td>Forced service-restart cadence</td></tr></tbody></table></div><div class="callout"><strong>Corrected design:</strong> <code>AppRotateSeconds</code> remains dedicated to log rotation. A SYSTEM scheduled task now provides the independent 30-minute restart trigger.</div></section>
+<section id="deploy" class="reveal searchable"><div class="label">04 / Deployment</div><h2>Controlled installation</h2><div class="grid"><article class="card"><h3>1. Stage</h3><p>Install a verified NSSM build, authorize read access to the release share, and confirm the application runs non-interactively.</p></article><article class="card"><h3>2. Customize</h3><p>Set the name, paths, identity, logging, and recovery values for the target environment.</p></article><article class="card"><h3>3. Validate</h3><p>Use a test host, check for naming collisions, back up configuration, and document rollback.</p></article><article class="card"><h3>4. Run elevated</h3><p>Execute the reviewed local script from a trusted Administrator PowerShell session.</p></article></div><div class="code"><button class="pill copy" type="button" data-copy="deployCode">Copy</button><pre id="deployCode"><code># Inspect release artifacts before execution
+Get-AuthenticodeSignature .\deploy-service.ps1
+Get-FileHash .\Application.exe -Algorithm SHA256
+
+# Use a process-scoped policy only
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.\deploy-service.ps1</code></pre></div><p class="muted">Validate signatures or hashes through an independent trusted channel. Do not weaken the machine-wide execution policy.</p></section>
+<section id="operate" class="reveal searchable"><div class="label">05 / Operations</div><h2>Verify, observe, recover</h2><div class="code"><button class="pill copy" type="button" data-copy="opsCode">Copy</button><pre id="opsCode"><code># Service health and configuration
+Get-Service -Name 'ApplicationService'
+sc.exe qc ApplicationService
+&amp; 'C:\Tools\nssm\win64\nssm.exe' dump ApplicationService
+
+# Application output
+Get-Content 'C:\ProgramData\ExampleOrg\Application\stdout.log' -Tail 100
+Get-Content 'C:\ProgramData\ExampleOrg\Application\stderr.log' -Tail 100
+
+# Service Control Manager events
+Get-WinEvent -FilterHashtable @{
+  LogName='System'; ProviderName='Service Control Manager'
+} -MaxEvents 30</code></pre></div><div class="table"><table><thead><tr><th>Signal</th><th>Expected</th><th>If unhealthy</th></tr></thead><tbody><tr><td>Windows service</td><td>Running; automatic</td><td>Inspect SCM events and NSSM dump</td></tr><tr><td>Application logs</td><td>Writable; bounded growth</td><td>Check ACLs, disk, and rotation</td></tr><tr><td>Process identity</td><td>Approved least privilege</td><td>Review logon and share access</td></tr><tr><td>Functional behavior</td><td>Health check passes</td><td>Rollback binary/configuration</td></tr></tbody></table></div></section>
+<section id="secure" class="reveal searchable"><div class="label">06 / Security</div><h2>Production hardening</h2><div class="grid"><article class="card"><h3>Use least privilege</h3><p><code>LocalSystem</code> has extensive rights. Prefer a dedicated service account or gMSA with only required permissions.</p></article><article class="card"><h3>Protect the supply chain</h3><p>Pin NSSM, verify checksums, sign the script, and validate the application artifact before copying.</p></article><article class="card"><h3>Control write access</h3><p>Restrict the share and installation directory. A writable executable path can enable privilege escalation.</p></article><article class="card"><h3>Keep secrets out</h3><p>Never publish credentials, internal hostnames, customer identifiers, production paths, or private IP addresses.</p></article></div></section>
+<section id="script" class="reveal searchable"><div class="label">07 / Corrected implementation</div><h2>Complete production script</h2><p class="muted">This anonymized, ready-to-customize version combines NSSM crash recovery with an independent SYSTEM scheduled task that forces a service restart every 30 minutes.</p><div class="callout"><strong>Customize before use:</strong> review the source share, installation directory, service identity, executable name, and NSSM location for the target environment.</div><div class="code"><button class="pill copy" type="button" data-copy="correctedScript">Copy complete script</button><pre id="correctedScript"><code># deploy-application-service.ps1
+# Run from an elevated PowerShell session
+
+$ErrorActionPreference = "Stop"
+
+$NSSM = "C:\Tools\nssm\win64\nssm.exe"
+$ServiceName = "ApplicationService"
+$RestartTaskName = "$ServiceName-Restart-Every-30-Minutes"
+$RestartIntervalMinutes = 30
+
+$SourceExecutable = "\\\\fileserver.example\\deploy\\Application\\Application.exe"
+$InstallDirectory = "C:\ProgramData\ExampleOrg\Application"
+$InstalledExecutable = Join-Path $InstallDirectory "Application.exe"
+
+# Log paths used by NSSM for rotation
+$LogStdout = Join-Path $InstallDirectory "stdout.log"
+$LogStderr = Join-Path $InstallDirectory "stderr.log"
+
+function Invoke-Nssm {
+    param(
+        [Parameter(Mandatory)]
+        [string[]] $NssmArguments
+    )
+
+    &amp; $NSSM @NssmArguments
+    $exitCode = $LASTEXITCODE
+
+    if ($exitCode -ne 0) {
+        throw (
+            "NSSM returned exit code {0}: {1}" -f `
+                $exitCode,
+                ($NssmArguments -join " ")
+        )
+    }
+}
+
+# Administrator privilege check
+$isAdministrator = (New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdministrator) {
+    throw "Run this script from an elevated PowerShell session."
+}
+
+if (-not (Test-Path -LiteralPath $NSSM -PathType Leaf)) {
+    throw "NSSM not found: $NSSM"
+}
+
+if (-not (Test-Path -LiteralPath $SourceExecutable -PathType Leaf)) {
+    throw "Source executable not found or inaccessible: $SourceExecutable"
+}
+
+if (-not (Test-Path -LiteralPath $InstallDirectory -PathType Container)) {
+    New-Item -ItemType Directory -Path $InstallDirectory -Force | Out-Null
+}
+
+# Safely replace an existing service
+$existingService = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+if ($existingService) {
+    Write-Host "Stopping existing service: $ServiceName"
+    if ($existingService.Status -ne "Stopped") {
+        # Do not block indefinitely when the service is already stopping
+        try {
+            Invoke-Nssm @("stop", $ServiceName)
+        } catch {
+            Write-Host "The service is taking time to stop; continuing with removal..."
+        }
+        Start-Sleep -Seconds 3
+    }
+
+    Write-Host "Removing existing service..."
+    Invoke-Nssm @("remove", $ServiceName, "confirm")
+
+    $waitCount = 0
+    while (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
+        $waitCount++
+        if ($waitCount -gt 24) {
+            throw "Service $ServiceName is still pending deletion. Close services.msc or restart Windows."
+        }
+        Write-Host "Waiting for service removal..."
+        Start-Sleep -Seconds 5
+    }
+}
+
+Write-Host "Copying the executable..."
+Copy-Item -LiteralPath $SourceExecutable -Destination $InstalledExecutable -Force
+
+if (-not (Test-Path -LiteralPath $InstalledExecutable -PathType Leaf)) {
+    throw "Executable copy failed: $InstalledExecutable"
+}
+
+Write-Host "Installing standalone service: $ServiceName"
+Invoke-Nssm @("install", $ServiceName, $InstalledExecutable)
+Invoke-Nssm @("set", $ServiceName, "AppDirectory", $InstallDirectory)
+Invoke-Nssm @("set", $ServiceName, "ObjectName", "LocalSystem")
+Invoke-Nssm @("set", $ServiceName, "Start", "SERVICE_AUTO_START")
+Invoke-Nssm @("set", $ServiceName, "AppNoConsole", "1")
+
+# Reindirizzamento dell'output (Condizione fondamentale per la rotazione di NSSM)
+Invoke-Nssm @("set", $ServiceName, "AppStdout", $LogStdout)
+Invoke-Nssm @("set", $ServiceName, "AppStderr", $LogStderr)
+
+# Rotate eligible logs when the service starts or restarts
+Invoke-Nssm @("set", $ServiceName, "AppRotateFiles", "1")
+Invoke-Nssm @("set", $ServiceName, "AppRotateSeconds", "1800")
+
+# Recovery policy for unexpected application exits
+Invoke-Nssm @("set", $ServiceName, "AppThrottle", "1500")
+Invoke-Nssm @("set", $ServiceName, "AppExit", "Default", "Restart")
+Invoke-Nssm @("set", $ServiceName, "AppRestartDelay", "5000")
+
+# Restart the service every 30 minutes, even while the application remains healthy
+$powerShellExecutable = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
+if (-not (Test-Path -LiteralPath $powerShellExecutable -PathType Leaf)) {
+    throw "Windows PowerShell not found: $powerShellExecutable"
+}
+$restartTaskArguments = '-NoProfile -NonInteractive -Command "&amp; {{ Restart-Service -Name ''{0}'' -Force -ErrorAction Stop }}"' -f $ServiceName
+$restartTaskAction = New-ScheduledTaskAction `
+    -Execute $powerShellExecutable `
+    -Argument $restartTaskArguments
+$restartTaskTrigger = New-ScheduledTaskTrigger `
+    -Once `
+    -At (Get-Date).AddMinutes($RestartIntervalMinutes) `
+    -RepetitionInterval (New-TimeSpan -Minutes $RestartIntervalMinutes)
+$restartTaskPrincipal = New-ScheduledTaskPrincipal `
+    -UserId "SYSTEM" `
+    -LogonType ServiceAccount `
+    -RunLevel Highest
+$restartTaskSettings = New-ScheduledTaskSettingsSet `
+    -StartWhenAvailable `
+    -MultipleInstances IgnoreNew `
+    -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
+
+$restartTask = New-ScheduledTask `
+    -Action $restartTaskAction `
+    -Trigger $restartTaskTrigger `
+    -Principal $restartTaskPrincipal `
+    -Settings $restartTaskSettings `
+    -Description "Restart service $ServiceName every $RestartIntervalMinutes minutes."
+
+Register-ScheduledTask `
+    -TaskName $RestartTaskName `
+    -InputObject $restartTask `
+    -Force | Out-Null
+
+Write-Host "Starting service: $ServiceName"
+Invoke-Nssm @("start", $ServiceName)
+
+Start-Sleep -Seconds 3
+$service = Get-Service -Name $ServiceName
+$registeredRestartTask = Get-ScheduledTask -TaskName $RestartTaskName -ErrorAction Stop
+
+if ($registeredRestartTask.State -eq "Disabled") {
+    throw "Scheduled task $RestartTaskName is disabled."
+}
+
+$restartInterval = $registeredRestartTask.Triggers[0].Repetition.Interval
+if ($restartInterval -ne "PT30M") {
+    throw "Invalid restart interval for $RestartTaskName`: $restartInterval"
+}
+
+Write-Host "Installation completed successfully."
+Write-Host "Service name: $ServiceName"
+Write-Host "Current status: $($service.Status)"
+Write-Host "Executable: $InstalledExecutable"
+Write-Host "Scheduled task: $RestartTaskName"
+Write-Host "Next restart: $((Get-ScheduledTaskInfo -TaskName $RestartTaskName).NextRunTime)"
+Write-Host "The service is standalone, recovers from unexpected exits, and restarts every $RestartIntervalMinutes minutes."</code></pre></div></section>
+<section id="help" class="reveal searchable"><div class="label">08 / Troubleshooting</div><h2>Fast diagnosis</h2><details><summary>The service remains pending deletion</summary><p>Close Services consoles and other open service handles. If the bounded timeout expires, reboot during an approved maintenance window.</p></details><details><summary>The service starts and stops immediately</summary><p>Run the executable interactively under equivalent permissions, inspect stderr and SCM events, and verify working-directory assumptions and runtime dependencies.</p></details><details><summary>No log files are created</summary><p>Confirm AppStdout/AppStderr values, directory existence, and write permissions for the service identity.</p></details><details><summary>The application cannot access the share</summary><p>LocalSystem normally authenticates to network resources as the machine account. Use a dedicated identity with explicit least-privilege access or stage artifacts separately.</p></details></section>
+</main></div>
+<footer>Windows service deployment guidance · Anonymized reference edition</footer>
+<script>
+(()=>{'use strict';
+const root=document.documentElement,theme=document.querySelector('#theme'),search=document.querySelector('#search'),sections=[...document.querySelectorAll('.searchable')];
+const setTheme=v=>{root.dataset.theme=v;theme.textContent=v==='dark'?'Light mode':'Dark mode';theme.setAttribute('aria-label',`Switch to ${v==='dark'?'light':'dark'} mode`)};
+setTheme(localStorage.getItem('service-guide-theme')||(matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'));
+theme.addEventListener('click',()=>{const n=root.dataset.theme==='dark'?'light':'dark';setTheme(n);localStorage.setItem('service-guide-theme',n)});
+addEventListener('scroll',()=>{const h=document.documentElement.scrollHeight-innerHeight;document.querySelector('#progress').style.width=`${h>0?scrollY/h*100:0}%`},{passive:true});
+search.addEventListener('input',()=>{const q=search.value.trim().toLowerCase();sections.forEach(s=>s.hidden=!!q&&!s.textContent.toLowerCase().includes(q))});
+document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',async()=>{const old=b.textContent;try{await navigator.clipboard.writeText(document.querySelector('#'+b.dataset.copy).innerText);b.textContent='Copied'}catch{b.textContent='Select text'}setTimeout(()=>b.textContent=old,1500)}));
+const reveal=new IntersectionObserver(es=>es.forEach(e=>e.target.classList.toggle('visible',e.isIntersecting)),{threshold:.08});sections.forEach(s=>reveal.observe(s));
+const links=[...document.querySelectorAll('.toc a')],spy=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)links.forEach(a=>a.classList.toggle('active',a.hash==='#'+e.target.id))}),{rootMargin:'-20% 0px -70%'});sections.forEach(s=>spy.observe(s));
+})();
+</script>
+</body></html>
